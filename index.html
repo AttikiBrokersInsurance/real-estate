@@ -170,6 +170,14 @@ header.top{background:var(--forest);color:#fff;position:sticky;top:0;z-index:50}
 .dbody{display:grid;grid-template-columns:1.6fr 1fr;gap:22px;padding:22px}
 @media(max-width:860px){.dbody{grid-template-columns:1fr}}
 .dbody h2{font-size:26px;margin:4px 0 2px}
+.spec{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;border-radius:12px;overflow:hidden}
+.spec td{padding:9px 14px;border-top:1px solid var(--stone);vertical-align:top}
+.spec tr:first-child td{border-top:0}.spec td:first-child{font-weight:600;width:42%}
+.chk{list-style:none;padding:0;margin:10px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.chk li::before{content:"✓";color:var(--brass);font-weight:700;margin-right:8px}
+@media(max-width:560px){.chk{grid-template-columns:1fr}}
+.morebox{grid-column:1/-1;border:1px solid var(--stone);border-radius:12px;padding:12px 14px}
+.morebox legend{padding:0 6px;font-weight:600}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:16px 0}
 .fgrid div{background:#fff;border-radius:10px;padding:10px 12px}
 .fgrid span{display:block;font-size:12px;color:var(--muted)}
@@ -297,7 +305,8 @@ footer b{color:#fff}
         <label class="fld"><span>Όροφος</span><input id="nFloor" maxlength="20" placeholder="π.χ. 3ος, Ισόγειο"></label>
         <label class="fld"><span>Έτος κατασκευής</span><input id="nYear" type="number" min="1900" max="2100" inputmode="numeric"></label>
         <label class="fld"><span>Θέρμανση</span>
-          <select id="nHeat"><option value="">—</option><option>Αυτόνομη</option><option>Κεντρική</option><option>Φυσικό αέριο</option><option>Ηλεκτρική</option><option>Χωρίς θέρμανση</option></select></label>
+          <select id="nHeat"><option value="">—</option><option>Αυτόνομη (Πετρέλαιο)</option><option>Αυτόνομη (Φυσικό αέριο)</option><option>Κεντρική (Πετρέλαιο)</option><option>Κεντρική (Φυσικό αέριο)</option><option>Ηλεκτρική</option><option>Αντλία θερμότητας</option><option>Ενδοδαπέδια</option><option>Χωρίς θέρμανση</option></select></label>
+        <span id="moreFields" style="display:contents"></span>
         <div class="fld full"><span>Χαρακτηριστικά</span>
           <div class="checks">
             <label><input type="checkbox" id="xNew"> Νεόδμητο</label>
@@ -306,7 +315,8 @@ footer b{color:#fff}
             <label><input type="checkbox" id="xElev"> Ανελκυστήρας</label>
             <label><input type="checkbox" id="xBalc"> Μπαλκόνι / Βεράντα</label>
             <label><input type="checkbox" id="xFurn"> Επιπλωμένο</label>
-          </div></div>
+            <span id="extraChecks" style="display:contents"></span>
+          </div><p class="hint">Τίκαρε ό,τι ισχύει για το ακίνητο. Θα εμφανιστεί ως λίστα με τικ στην αγγελία.</p></div>
         <label class="fld full"><span>Περιγραφή</span><textarea id="nDesc" maxlength="3000" placeholder="Περίγραψε το ακίνητο: κατάσταση, γειτονιά, παροχές…"></textarea></label>
 
         <div class="fld full"><span>Θέση στον χάρτη</span>
@@ -464,7 +474,7 @@ function filtered(){
   let r=pub.filter(l=>{
     if(F.onlyFav){ if(!favs.has(l.id)) return false; }
     else if(l.mode!==F.mode) return false;
-    if(F.cat==='__new'){ if(!l.newBuild) return false; }
+    if(F.cat==='__new'){ if(!l.newBuild&&l.condition!=='Νεόδμητο') return false; }
     else if(F.cat==='__student'){ if(!l.student) return false; }
     else if(F.cat && l.category!==F.cat) return false;
     if(q && !norm([l.area,l.street,l.title,l.subcategory].join(' ')).includes(q)) return false;
@@ -527,9 +537,13 @@ function openDetail(id){
   const l=findL(id); if(!l) return;
   history.replaceState(null,'','#l='+id);
   gList=l.photos||[]; gIdx=0;
-  const fx=[['Κατηγορία',l.category],['Τύπος',l.subcategory],['Εμβαδόν',l.sqm?l.sqm+' τ.μ.':''],['Υπνοδωμάτια',l.beds],['Μπάνια',l.baths],['Όροφος',l.floor],['Έτος',l.year],['Θέρμανση',l.heating],['Κωδικός',l.code]]
-    .filter(x=>x[1]!==''&&x[1]!=null&&x[1]!==undefined).map(x=>'<div><span>'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('');
-  const feats=[l.newBuild&&'Νεόδμητο',l.student&&'Φοιτητικό',l.parking&&'Parking',l.elevator&&'Ανελκυστήρας',l.balcony&&'Μπαλκόνι / Βεράντα',l.furnished&&'Επιπλωμένο'].filter(Boolean);
+  const has=v=>v!==''&&v!=null&&v!==undefined;
+  const ppsqm=(l.sqm>0)?eur(Math.round(l.price/l.sqm))+(l.mode==='rent'?' / μήνα':'')+' ανά τ.μ.':'';
+  const rows=[['Κατηγορία',l.category],['Τύπος',l.subcategory],['Εμβαδόν',l.sqm?l.sqm+' τ.μ.':''],['Τιμή ανά τ.μ.',l.sqm>0?eur(Math.round(l.price/l.sqm)):''],['Περιοχή',l.area],['Ζώνη',l.zone],['Υπνοδωμάτια',l.beds],['Επίπεδα',l.levels],['Όροφος',l.floor],['Έτος κατασκευής',l.year],['Σύστημα θέρμανσης',l.heating],['Ενεργειακή κλάση',l.energy],['Κουζίνες',l.kitchens],['Σαλόνια',l.living],['Μπάνια',l.baths],['WC',l.wc],['Κατάσταση',l.condition],['Κωδικός',l.code]].filter(x=>has(x[1]));
+  const fx='<table class="spec">'+rows.map(x=>'<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td></tr>').join('')+'</table>';
+  const feats=[l.newBuild&&'Νεόδμητο',l.student&&'Κατάλληλο για φοιτητές',l.parking&&'Θέση στάθμευσης',l.elevator&&'Ασανσέρ',l.balcony&&'Μπαλκόνι / Βεράντα',l.furnished&&'Επιπλωμένο']
+    .concat(EXTRAS.filter(([k])=>(l.extras||[]).includes(k)).map(([k,t])=>t))
+    .concat([['orient','Προσανατολισμός'],['access','Πρόσβαση από'],['frames','Κουφώματα'],['glass','Τύποι υαλοπινάκων'],['floorT','Τύπος δαπέδων']].filter(([k])=>has(l[k])).map(([k,t])=>t+': '+l[k])).filter(Boolean);
   $('#sheet').innerHTML=
    '<button class="close" id="closeD" aria-label="Κλείσιμο">×</button>'+
    '<div class="gal">'+(gList.length?'<img class="main" id="gMain" alt="Φωτογραφία ακινήτου"><button class="nav prev" id="gPrev" aria-label="Προηγούμενη">‹</button><button class="nav next" id="gNext" aria-label="Επόμενη">›</button><span class="cnt" id="gCnt"></span>':'<div class="noph" style="aspect-ratio:16/8">Χωρίς φωτογραφίες</div>')+'</div>'+
@@ -538,8 +552,8 @@ function openDetail(id){
      '<span class="tag '+(l.mode==='rent'?'rent':'')+'" style="position:static;display:inline-block">'+(l.mode==='rent'?'Ενοικίαση':'Πώληση')+'</span>'+
      '<h2>'+esc(l.title)+'</h2><div class="price" style="font-size:28px">'+eur(l.price)+(l.mode==='rent'?' <small>/ μήνα</small>':'')+'</div>'+
      '<div class="loc" style="color:var(--muted)">'+esc([l.street,l.area].filter(Boolean).join(', '))+'</div>'+
-     '<div class="fgrid">'+fx+'</div>'+
-     (feats.length?'<p>'+feats.map(f=>'<span class="st approved" style="margin:0 6px 6px 0">'+f+'</span>').join('')+'</p>':'')+
+     fx+
+     (feats.length?'<h3 style="margin-top:14px">Χαρακτηριστικά</h3><ul class="chk">'+feats.map(f=>'<li>'+esc(f)+'</li>').join('')+'</ul>':'')+
      (l.description?'<h3 style="margin-top:14px">Περιγραφή</h3><p style="white-space:pre-wrap">'+esc(l.description)+'</p>':'')+
      (typeof l.lat==='number'?'<h3 style="margin-top:14px">Τοποθεσία</h3><div id="detailMap"></div>':'')+
    '</div><aside class="side"><h3>Με ενδιαφέρει</h3>'+
@@ -638,6 +652,25 @@ db.collection('listings').where('status','==','approved').onSnapshot(s=>{
 },e=>{console.error(e);$('#cards').innerHTML='<div class="empty"><h3>Δεν φορτώθηκαν οι αγγελίες</h3><p>Έλεγξε τη σύνδεσή σου και ανανέωσε τη σελίδα.</p></div>'});
 
 /* ---------------- new/edit form ---------------- */
+
+/* ---------- επιπλέον χαρακτηριστικά ---------- */
+const EXTRAS=[['storage','Αποθήκη'],['through','Διαμπερές'],['solar','Ηλιακός θερμοσίφωνας'],['ac','Κλιματισμός'],['commonIncl','Εμπεριέχει κοινόχρηστα'],['nightPower','Νυχτερινό ρεύμα'],['secDoor','Πόρτα ασφαλείας'],['frontage','Προσόψεως'],['screens','Σίτες'],['alarm','Συναγερμός'],['awnings','Τέντες'],['fireplace','Τζάκι'],['bright','Φωτεινό']];
+const SELS=[
+ ['zone','Ζώνη',['Οικιστική ζώνη','Εμπορική ζώνη','Βιομηχανική / Βιοτεχνική ζώνη','Εκτός σχεδίου','Άλλη']],
+ ['condition','Κατάσταση',['Νεόδμητο','Υπό κατασκευή','Ανακαινισμένο','Πολύ καλή','Καλή','Βαμμένο','Χρήζει ανακαίνισης']],
+ ['energy','Ενεργειακή κλάση',['Α+','Α','Β+','Β','Γ','Δ','Ε','Ζ','Η','Σε εξέλιξη / Εξαιρείται']],
+ ['orient','Προσανατολισμός',['Βόρειος','Βορειοανατολικός','Ανατολικός','Ανατολικομεσημβρινός','Νότιος','Νοτιοδυτικός','Δυτικός','Βορειοδυτικός']],
+ ['access','Πρόσβαση από',['Άσφαλτο','Πλακόστρωτο','Χωματόδρομο','Πεζόδρομο']],
+ ['frames','Κουφώματα',['Αλουμινίου','Ξύλινα','PVC','Σιδερένια']],
+ ['glass','Τύποι υαλοπινάκων',['Μονός υαλοπίνακας','Διπλός υαλοπίνακας','Θερμομονωτικός','Ηχομονωτικός']],
+ ['floorT','Τύπος δαπέδων',['Πλακάκι','Μάρμαρο','Ξύλο / Παρκέ','Laminate','Μοκέτα','Μωσαϊκό','Βιομηχανικό δάπεδο']]
+];
+const NUMS=[['levels','Επίπεδα'],['kitchens','Κουζίνες'],['living','Σαλόνια'],['wc','WC']];
+function buildMore(){
+  $('#moreFields').innerHTML=NUMS.map(([k,t])=>'<label class="fld"><span>'+t+'</span><input id="n_'+k+'" type="number" min="0" max="50" inputmode="numeric"></label>').join('')+
+    SELS.map(([k,t,o])=>'<label class="fld"><span>'+t+'</span><select id="s_'+k+'"><option value="">—</option>'+o.map(x=>'<option>'+x+'</option>').join('')+'</select></label>').join('');
+  $('#extraChecks').innerHTML=EXTRAS.map(([k,t])=>'<label><input type="checkbox" id="ex_'+k+'"> '+t+'</label>').join('');
+}
 function fillCats(){
   $('#nCat').innerHTML=Object.keys(CATS).map(c=>'<option>'+c+'</option>').join('');
   fillSubs();
@@ -687,6 +720,7 @@ function startEdit(id){
   $('#nSqm').value=l.sqm||''; $('#nBeds').value=l.beds??''; $('#nBaths').value=l.baths??''; $('#nFloor').value=l.floor||''; $('#nYear').value=l.year||'';
   $('#nHeat').value=l.heating||''; $('#nDesc').value=l.description||'';
   $('#xNew').checked=!!l.newBuild; $('#xStudent').checked=!!l.student; $('#xParking').checked=!!l.parking; $('#xElev').checked=!!l.elevator; $('#xBalc').checked=!!l.balcony; $('#xFurn').checked=!!l.furnished;
+  SELS.forEach(([k])=>{$('#s_'+k).value=l[k]||''});NUMS.forEach(([k])=>{$('#n_'+k).value=l[k]??''});EXTRAS.forEach(([k])=>{$('#ex_'+k).checked=(l.extras||[]).includes(k)});
   photos=(l.photos||[]).map(u=>({url:u,preview:u}));
   if(typeof l.lat==='number') pickLL=[l.lat,l.lng];
   renderThumbs(); show('new');
@@ -752,6 +786,9 @@ $('#lform').addEventListener('submit',async e=>{
       beds:num('#nBeds'), baths:num('#nBaths'), floor:$('#nFloor').value.trim(), year:num('#nYear'), heating:$('#nHeat').value,
       description:$('#nDesc').value.trim(),
       newBuild:$('#xNew').checked, student:$('#xStudent').checked, parking:$('#xParking').checked, elevator:$('#xElev').checked, balcony:$('#xBalc').checked, furnished:$('#xFurn').checked,
+      extras:EXTRAS.filter(([k])=>$('#ex_'+k).checked).map(([k])=>k),
+      zone:$('#s_zone').value,condition:$('#s_condition').value,energy:$('#s_energy').value,orient:$('#s_orient').value,access:$('#s_access').value,frames:$('#s_frames').value,glass:$('#s_glass').value,floorT:$('#s_floorT').value,
+      levels:num('#n_levels'),kitchens:num('#n_kitchens'),living:num('#n_living'),wc:num('#n_wc'),
       photos:urls, lat:pickLL?pickLL[0]:null, lng:pickLL?pickLL[1]:null,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -910,7 +947,7 @@ function openRequest(){
 $('#reqBtn').onclick=openRequest;
 $('#ownBtn').onclick=startNew;
 
-buildRanges(); fillCats(); renderResults();
+buildMore(); buildRanges(); fillCats(); renderResults();
 </script>
 </body>
 </html>
