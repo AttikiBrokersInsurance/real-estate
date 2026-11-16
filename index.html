@@ -328,7 +328,7 @@ footer b{color:#fff}
           <p class="hint" id="pickHint">Πάτησε πάνω στον χάρτη για να τοποθετήσεις τη θέση του ακινήτου. Η ακριβής θέση μπορεί να μείνει κρυφή: ο επισκέπτης θα βλέπει την περιοχή.</p>
         </div>
 
-        <div class="fld full"><span>Φωτογραφίες (έως 12)</span>
+        <div class="fld full"><span id="photoLbl">Φωτογραφίες (έως 20)</span>
           <label class="drop">Πάτησε για να επιλέξεις φωτογραφίες από τη συσκευή σου<input id="nFiles" type="file" accept="image/*" multiple class="sr"></label>
           <div class="thumbs" id="thumbs"></div>
           <p class="hint">Η πρώτη φωτογραφία είναι η εξώφυλλο. Μειώνουμε αυτόματα το μέγεθος πριν την αποστολή.</p>
@@ -702,7 +702,7 @@ $('#mapFind').onclick=async()=>{
 function resetForm(){
   $('#lform').reset(); editing=null; pickLL=null; photos=[]; $('#saveMsg').textContent='';
   if(pickMarker){pickMarker.remove();pickMarker=null}
-  fillCats(); renderThumbs(); $('#formTitle').textContent='Νέα αγγελία';
+  fillCats(); renderThumbs(); $('#photoLbl').textContent='Φωτογραφίες (έως '+maxPhotos()+')'; $('#formTitle').textContent='Νέα αγγελία';
   $('#saveBtn').textContent=isOffice?'Δημοσίευση αγγελίας':'Υποβολή αγγελίας';
   if(user){ $('#nOwner').value=user.displayName||''; }
 }
@@ -728,6 +728,7 @@ function startEdit(id){
   // contact
   db.collection('listings').doc(id).collection('private').doc('contact').get().then(d=>{ if(d.exists){$('#nOwner').value=d.data().name||'';$('#nPhone').value=d.data().phone||''} }).catch(()=>{});
 }
+function maxPhotos(){return isOffice?40:20}
 function renderThumbs(){
   $('#thumbs').innerHTML=photos.map((p,i)=>'<div class="t"><img alt="" src="'+esc(p.preview)+'">'+(i===0?'<span class="cover">Εξώφυλλο</span>':'')+'<button type="button" class="x" data-rm="'+i+'" aria-label="Αφαίρεση φωτογραφίας">×</button></div>').join('');
 }
@@ -735,7 +736,7 @@ $('#thumbs').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');
 $('#nFiles').addEventListener('change',async e=>{
   const files=[...e.target.files]; e.target.value='';
   for(const f of files){
-    if(photos.length>=12){toast('Το μέγιστο είναι 12 φωτογραφίες.');break}
+    if(photos.length>=maxPhotos()){toast('Το μέγιστο είναι '+maxPhotos()+' φωτογραφίες.');break}
     if(!f.type.startsWith('image/')) continue;
     try{ const blob=await compress(f); photos.push({blob,preview:URL.createObjectURL(blob)}); }
     catch(err){ toast('Η φωτογραφία '+f.name+' δεν διαβάστηκε. Δοκίμασε άλλη μορφή (JPG ή PNG).',5000); }
