@@ -180,6 +180,13 @@ header.top{background:var(--forest);color:#fff;position:sticky;top:0;z-index:50}
 .ok{color:var(--ok);font-weight:600}
 .err{color:var(--danger);font-weight:600;font-size:14px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;z-index:200;max-width:92vw;box-shadow:var(--shadow)}
+.reqbox{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:22px;margin:0 0 50px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.reqbox h3{font-size:20px}.reqbox p{margin:4px 0 0;color:var(--muted)}
+.rform{padding:22px 22px 26px}.rform h2{font-size:24px;margin-bottom:4px}
+.fcols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
+@media(max-width:700px){.fcols{grid-template-columns:1fr;gap:16px}}
+footer h4{color:#fff;margin:0 0 6px;font-family:Montserrat,Figtree,sans-serif;font-weight:500;letter-spacing:.08em;font-size:13px;text-transform:uppercase}
+footer a{color:#fff;text-decoration:none}footer a:hover{text-decoration:underline}
 footer{background:var(--forest);color:#BDBBB4;padding:26px 0;font-size:14px}
 footer b{color:#fff}
 .honey{position:absolute;left:-9999px}
@@ -217,7 +224,7 @@ footer b{color:#fff}
   <div class="hero">
     <div class="wrap">
       <h1>Βρες το ακίνητο που σου ταιριάζει</h1>
-      <p>Αγγελίες από το γραφείο μας και από ιδιοκτήτες, όλες ελεγμένες πριν δημοσιευτούν.</p>
+      <p>Πάνω από 30 χρόνια δίπλα σε ιδιοκτήτες και αγοραστές. Σε βοηθάμε να βρεις το ακίνητο που ψάχνεις.</p>
     </div>
   </div>
   <div class="wrap">
@@ -263,6 +270,8 @@ footer b{color:#fff}
     </div>
     <div class="cards" id="cards"></div>
     <div id="mapView" class="hidden"></div>
+    <div class="reqbox"><div><h3>Η εταιρεία μας</h3><p style="color:var(--ink);max-width:70ch">Αναλαμβάνουμε την πώληση, την ενοικίαση και την αντιπαροχή του ακινήτου σας με τους καλύτερους όρους της αγοράς. Καλέστε μας στο <a href="tel:+302105782282"><b>210 578 2282</b></a> ή περάστε από το γραφείο μας, Λεωφ. Πετρούπολεως 20, Ίλιον.</p></div><button class="btn" id="ownBtn" type="button">Καταχώρηση του ακινήτου σου</button></div>
+    <div class="reqbox"><div><h3>Δεν βρίσκεις αυτό που ψάχνεις;</h3><p>Πες μας τι ακίνητο θέλεις και θα επικοινωνήσουμε μαζί σου μόλις βρούμε κάτι που ταιριάζει.</p></div><button class="btn" id="reqBtn" type="button">Ζήτηση ακινήτου</button></div>
   </div>
 </section>
 
@@ -354,7 +363,11 @@ footer b{color:#fff}
 </div></div></section>
 </main>
 
-<footer><div class="wrap"><b>Attiki Brokers Real Estate</b> · Μεσιτικό και ασφαλιστικό γραφείο<br>Οι αγγελίες είναι ενδεικτικές και δεν αποτελούν δεσμευτική προσφορά.</div></footer>
+<footer><div class="wrap"><div class="fcols">
+<div><h4>Attiki Brokers Real Estate</h4>Μεσιτικό και ασφαλιστικό γραφείο.<br>Πάνω από 30 χρόνια εμπειρίας.</div>
+<div><h4>Επικοινωνία</h4><a href="tel:+302105782282">210 578 2282</a><br><a href="tel:+306937238773">693 723 8773</a><br><a href="mailto:attiki.brokers@gmail.com">attiki.brokers@gmail.com</a></div>
+<div><h4>Γραφείο</h4>Πετρούπολεως 20, Ίλιον 13123<br><a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=%CE%A0%CE%B5%CF%84%CF%81%CE%BF%CF%85%CF%80%CF%8C%CE%BB%CE%B5%CF%89%CF%82+20+%CE%8A%CE%BB%CE%B9%CE%BF%CE%BD">Δες το στον χάρτη</a></div>
+</div><p style="margin:16px 0 0;font-size:13px">Οι αγγελίες είναι ενδεικτικές και δεν αποτελούν δεσμευτική προσφορά.</p></div></footer>
 
 <!-- DETAIL -->
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Στοιχεία αγγελίας"><div class="sheet" id="sheet"></div></div>
@@ -859,6 +872,43 @@ $('#mMine').onclick=()=>{closePop();show('mine')};
 $('#mAdmin').onclick=()=>{closePop();show('admin')};
 $('#mOut').onclick=()=>{closePop();auth.signOut()};
 window.addEventListener('hashchange',openFromHash);
+
+
+/* ---------------- ζήτηση ακινήτου ---------------- */
+function openRequest(){
+  history.replaceState(null,'',location.pathname+location.search);
+  $('#sheet').innerHTML='<button class="close" id="closeD" aria-label="Κλείσιμο">×</button><form class="rform" id="rform" novalidate><h2>Ζήτηση ακινήτου</h2><p class="hint" style="margin-bottom:14px">Περιέγραψε το ακίνητο που ψάχνεις. Όσο πιο αναλυτικά, τόσο καλύτερα.</p><div class="form-grid">'+
+  '<label class="fld"><span>Ενδιαφέρομαι για</span><select id="rMode"><option>Αγορά</option><option>Ενοικίαση</option></select></label>'+
+  '<label class="fld"><span>Κατηγορία</span><select id="rCat">'+Object.keys(CATS).map(c=>'<option>'+c+'</option>').join('')+'</select></label>'+
+  '<label class="fld"><span>Περιοχή</span><input id="rArea" maxlength="80" placeholder="π.χ. Ίλιον, Πετρούπολη"></label>'+
+  '<label class="fld"><span>Εμβαδόν (τ.μ.)</span><input id="rSqm" maxlength="30" placeholder="π.χ. 60-80"></label>'+
+  '<label class="fld"><span>Προϋπολογισμός (€)</span><input id="rBud" maxlength="30" placeholder="π.χ. έως 150.000"></label>'+
+  '<label class="fld full"><span>Περιγραφή</span><textarea id="rDesc" maxlength="800" placeholder="π.χ. 2 υπνοδωμάτια, ανελκυστήρας, κοντά στο μετρό"></textarea></label>'+
+  '<label class="fld"><span>Ονοματεπώνυμο</span><input id="rName" autocomplete="name" maxlength="80"></label>'+
+  '<label class="fld"><span>Τηλέφωνο</span><input id="rPhone" type="tel" autocomplete="tel" maxlength="30"></label>'+
+  '<label class="fld full"><span>Email</span><input id="rMail" type="email" autocomplete="email" maxlength="80"></label>'+
+  '<input class="honey" id="rHp" tabindex="-1" autocomplete="off" aria-hidden="true">'+
+  '<div class="full"><p class="err" id="rErr"></p><button class="btn" id="rBtn" type="submit">Αποστολή ζήτησης</button></div></div></form>';
+  $('#modal').classList.add('open'); document.body.style.overflow='hidden'; $('#modal').scrollTop=0;
+  $('#closeD').onclick=closeDetail;
+  $('#rform').onsubmit=async e=>{
+    e.preventDefault(); const err=$('#rErr'); err.textContent=''; if($('#rHp').value) return;
+    const name=$('#rName').value.trim(), phone=$('#rPhone').value.trim(), mail=$('#rMail').value.trim();
+    if(!name){err.textContent='Γράψε το όνομά σου, για να ξέρουμε ποιον να καλέσουμε.';return}
+    if(!phone&&!mail){err.textContent='Γράψε τηλέφωνο ή email, για να μπορέσουμε να επικοινωνήσουμε μαζί σου.';return}
+    if(mail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){err.textContent='Το email δεν φαίνεται σωστό. Έλεγξε ότι έχει τη μορφή onoma@email.gr.';return}
+    if(!$('#rArea').value.trim()&&!$('#rDesc').value.trim()){err.textContent='Γράψε την περιοχή ή μια σύντομη περιγραφή του ακινήτου που ψάχνεις.';return}
+    const msg=['Ζήτηση: '+$('#rMode').value+' · '+$('#rCat').value,'Περιοχή: '+($('#rArea').value.trim()||'—'),'Εμβαδόν: '+($('#rSqm').value.trim()||'—'),'Προϋπολογισμός: '+($('#rBud').value.trim()||'—'),$('#rDesc').value.trim()].join('\n');
+    const b=$('#rBtn'); b.disabled=true; b.textContent='Αποστολή…';
+    try{
+      await db.collection('inquiries').add({listingId:'',listingCode:'ΖΗΤΗΣΗ',listingTitle:'Ζήτηση ακινήτου',name,phone,email:mail,message:msg,handled:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      $('#rform').innerHTML='<h2>Ευχαριστούμε!</h2><p class="ok">Λάβαμε τη ζήτησή σου και θα επικοινωνήσουμε μαζί σου μόλις βρούμε κάτι που ταιριάζει.</p><button class="btn" type="button" id="rOk">Κλείσιμο</button>';
+      $('#rOk').onclick=closeDetail;
+    }catch(ex){console.error(ex);err.textContent='Δεν στάλθηκε. Έλεγξε τη σύνδεσή σου και ξαναδοκίμασε.';b.disabled=false;b.textContent='Αποστολή ζήτησης'}
+  };
+}
+$('#reqBtn').onclick=openRequest;
+$('#ownBtn').onclick=startNew;
 
 buildRanges(); fillCats(); renderResults();
 </script>
