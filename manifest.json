@@ -1,0 +1,16 @@
+{
+  "name": "Attiki Brokers Real Estate",
+  "short_name": "Attiki Homes",
+  "description": "Αγγελίες ακινήτων προς πώληση και ενοικίαση – Attiki Brokers Real Estate",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "lang": "el",
+  "background_color": "#1B1C1F",
+  "theme_color": "#1B1C1F",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
