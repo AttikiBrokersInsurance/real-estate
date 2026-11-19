@@ -116,7 +116,26 @@ header.top{background:var(--forest);color:#fff;position:sticky;top:0;z-index:50}
 .empty{background:#fff;border-radius:var(--r);padding:42px 20px;text-align:center;color:var(--muted);grid-column:1/-1}
 .empty h3{color:var(--ink);margin-bottom:6px}
 #mapView{height:min(70vh,640px);border-radius:var(--r);overflow:hidden;border:1px solid var(--stone);margin-bottom:50px}
-.pin{background:var(--forest);color:#fff;border-radius:99px;padding:3px 10px;font-weight:700;font-size:13px;white-space:nowrap;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transform:translate(-50%,-100%)}
+.pin{display:inline-block;width:max-content;background:var(--forest);color:#fff;border-radius:99px;padding:5px 12px;font-weight:700;font-size:14px;line-height:1.2;white-space:nowrap;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.4);transform:translate(-50%,-100%);position:relative}
+.pin::after{content:'';position:absolute;left:50%;bottom:-8px;margin-left:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+.pin:hover{z-index:9999}
+.mp .leaflet-popup-content-wrapper{padding:0;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.mp .leaflet-popup-content{margin:0;width:250px!important}
+.mp .leaflet-popup-close-button{top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff!important;font-size:18px;line-height:24px;padding:0;text-align:center;z-index:5}
+.mpop{font-family:inherit;color:var(--ink,#1B1C1F)}
+.mph{position:relative;height:140px;background:#d6d5d0;cursor:pointer}
+.mph img{width:100%;height:100%;object-fit:cover;display:block}
+.mph .noph{height:100%;display:grid;place-items:center;font-size:13px;color:#777}
+.mph .tag{position:absolute;left:10px;top:10px}
+.mbd{padding:12px 14px 14px}
+.mpr{font-size:22px;font-weight:800;line-height:1.1}.mpr small{font-size:12px;font-weight:600;color:#666}
+.mbd .ppm{margin-top:2px}
+.mti{font-weight:700;font-size:14px;margin-top:6px;line-height:1.25}
+.mlo{font-size:12.5px;color:#666;margin-top:2px}
+.mbd .facts{display:flex;gap:10px;font-size:12.5px;margin-top:8px;color:#444}
+.mgo{margin-top:12px;width:100%;border:0;border-radius:10px;padding:11px;background:var(--brass);color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.mgo:hover{filter:brightness(1.08)}
+
 .pin.rent{background:var(--brass)}
 .leaflet-container{font-family:Figtree,sans-serif}
 
@@ -521,6 +540,20 @@ function renderResults(){
 }
 
 /* ---------------- result map ---------------- */
+function mapPopup(l){
+  const el=document.createElement('div'); el.className='mpop';
+  const img=l.photos&&l.photos[0]?'<img alt="" src="'+esc(l.photos[0])+'">':'<div class="noph">Χωρίς φωτογραφία</div>';
+  const facts=[l.sqm?'<span><b>'+esc(l.sqm)+'</b> τ.μ.</span>':'',l.beds?'<span><b>'+esc(l.beds)+'</b> υπν.</span>':'',l.floor?'<span>'+esc(l.floor)+'</span>':''].join('');
+  el.innerHTML='<div class="mph">'+img+'<span class="tag '+(l.mode==='rent'?'rent':'')+'">'+(l.mode==='rent'?'Ενοικίαση':'Πώληση')+'</span></div>'+
+    '<div class="mbd"><div class="mpr">'+eur(l.price)+(l.mode==='rent'?' <small>/ μήνα</small>':'')+'</div>'+
+    (l.sqm>0&&l.price>0?'<div class="ppm">'+eur(Math.round(l.price/l.sqm))+' / τ.μ.</div>':'')+
+    '<div class="mti">'+esc(l.title)+'</div><div class="mlo">'+esc(l.subcategory||l.category)+' · '+esc(l.area)+'</div>'+
+    '<div class="facts">'+facts+'</div><button type="button" class="mgo">Δες την αγγελία</button></div>';
+  el.querySelector('.mgo').addEventListener('click',()=>openDetail(l.id));
+  el.querySelector('.mph').addEventListener('click',()=>openDetail(l.id));
+  return el;
+}
+
 function renderMap(){
   if(typeof L==='undefined') return;
   const el=$('#mapView'); if(el.classList.contains('hidden')) return;
@@ -530,8 +563,8 @@ function renderMap(){
   filtered().forEach(l=>{
     if(typeof l.lat!=='number'||typeof l.lng!=='number') return;
     const short=l.price>=1000000?(l.price/1e6).toFixed(1)+'M':(l.price>=1000?Math.round(l.price/1000)+'k':l.price);
-    const m=L.marker([l.lat,l.lng],{icon:L.divIcon({className:'',html:'<div class="pin '+(l.mode==='rent'?'rent':'')+'">€'+short+'</div>',iconSize:[0,0]})}).addTo(resLayer);
-    m.on('click',()=>openDetail(l.id)); pts.push([l.lat,l.lng]);
+    const m=L.marker([l.lat,l.lng],{icon:L.divIcon({className:'',html:'<div class="pin '+(l.mode==='rent'?'rent':'')+'">€'+short+'</div>',iconSize:[0,0],popupAnchor:[0,-44]})}).addTo(resLayer);
+    m.bindPopup(mapPopup(l),{className:'mp',minWidth:250,maxWidth:250,autoPanPadding:[30,30]}); pts.push([l.lat,l.lng]);
   });
   setTimeout(()=>{resMap.invalidateSize(); if(pts.length) resMap.fitBounds(pts,{padding:[40,40],maxZoom:15});},50);
 }
@@ -665,11 +698,11 @@ const SELS=[
  ['zone','Ζώνη',['Οικιστική ζώνη','Εμπορική ζώνη','Βιομηχανική / Βιοτεχνική ζώνη','Εκτός σχεδίου','Άλλη']],
  ['condition','Κατάσταση',['Νεόδμητο','Υπό κατασκευή','Ανακαινισμένο','Πολύ καλή','Καλή','Βαμμένο','Χρήζει ανακαίνισης']],
  ['energy','Ενεργειακή κλάση',['Α+','Α','Β+','Β','Γ','Δ','Ε','Ζ','Η','Σε εξέλιξη / Εξαιρείται']],
- ['orient','Προσανατολισμός',['Βόρειος','Βορειοανατολικός','Ανατολικός','Ανατολικομεσημβρινός','Νότιος','Νοτιοδυτικός','Δυτικός','Βορειοδυτικός']],
+ ['orient','Προσανατολισμός',['Βόρειος','Βορειοανατολικός','Ανατολικός','Νοτιοανατολικός','Ανατολικομεσημβρινός','Νότιος','Νοτιοδυτικός','Δυτικός','Βορειοδυτικός','Βόρειος / Νότιος','Ανατολικός / Δυτικός','Βόρειος / Ανατολικός','Βόρειος / Δυτικός','Νότιος / Ανατολικός','Νότιος / Δυτικός','Βορειοανατολικός / Νοτιοδυτικός','Βορειοδυτικός / Νοτιοανατολικός','Βόρειος / Ανατολικός / Νότιος','Βόρειος / Ανατολικός / Δυτικός','Βόρειος / Νότιος / Δυτικός','Νότιος / Ανατολικός / Δυτικός','Τετραπλής όψεως (παντός προσανατολισμού)']],
  ['access','Πρόσβαση από',['Άσφαλτο','Πλακόστρωτο','Χωματόδρομο','Πεζόδρομο']],
  ['frames','Κουφώματα',['Αλουμινίου','Ξύλινα','PVC','Σιδερένια']],
  ['glass','Τύποι υαλοπινάκων',['Μονός υαλοπίνακας','Διπλός υαλοπίνακας','Θερμομονωτικός','Ηχομονωτικός']],
- ['floorT','Τύπος δαπέδων',['Πλακάκι','Μάρμαρο','Ξύλο / Παρκέ','Laminate','Μοκέτα','Μωσαϊκό','Βιομηχανικό δάπεδο']]
+ ['floorT','Τύπος δαπέδων',['Πλακάκι','Μάρμαρο','Ξύλο / Παρκέ','Δρύινο','Laminate','Μοκέτα','Μωσαϊκό','Βιομηχανικό δάπεδο','Μάρμαρο / Δρύινο','Μάρμαρο / Πλακάκι','Μάρμαρο / Laminate','Πλακάκι / Δρύινο','Πλακάκι / Laminate','Πλακάκι / Παρκέ','Δρύινο / Laminate']]
 ];
 const NUMS=[['levels','Επίπεδα'],['kitchens','Κουζίνες'],['living','Σαλόνια'],['wc','WC']];
 function buildMore(){
