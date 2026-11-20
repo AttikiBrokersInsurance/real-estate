@@ -575,8 +575,18 @@ function renderMap(){
   filtered().forEach(l=>{
     if(typeof l.lat!=='number'||typeof l.lng!=='number') return;
     const short=l.price>=1000000?(l.price/1e6).toFixed(1)+'M':(l.price>=1000?Math.round(l.price/1000)+'k':l.price);
-    const m=L.marker([l.lat,l.lng],{icon:L.divIcon({className:'',html:'<div class="pin '+(l.mode==='rent'?'rent':'')+'">€'+short+'</div>',iconSize:[0,0],popupAnchor:[0,-44]})}).addTo(resLayer);
-    m.bindPopup(mapPopup(l),{className:'mp',minWidth:250,maxWidth:250,autoPanPadding:[30,30]}); pts.push([l.lat,l.lng]);
+    const m=L.marker([l.lat,l.lng],{icon:L.divIcon({className:'',html:'<div class="pin '+(l.mode==='rent'?'rent':'')+'">€'+short+'</div>',iconSize:[0,0]})}).addTo(resLayer);
+    // Hover (or tap) on the price opens the mini card; it stays while the mouse is on the pin or on the card
+    const el=mapPopup(l);
+    const pop=L.popup({className:'mp',minWidth:250,maxWidth:250,autoPanPadding:[30,30],offset:[0,-44],closeButton:false,autoClose:true,closeOnClick:true});
+    pop.setContent(el);
+    let tm=null;
+    const keep=()=>{clearTimeout(tm)};
+    const later=()=>{clearTimeout(tm);tm=setTimeout(()=>{resMap.closePopup(pop)},350)};
+    const show=()=>{keep();pop.setLatLng(m.getLatLng());pop.openOn(resMap)};
+    el.addEventListener('mouseenter',keep); el.addEventListener('mouseleave',later);
+    m.on('mouseover',show); m.on('mouseout',later); m.on('click',show);
+    pts.push([l.lat,l.lng]);
   });
   setTimeout(()=>{resMap.invalidateSize(); if(pts.length) resMap.fitBounds(pts,{padding:[40,40],maxZoom:15});},50);
 }
